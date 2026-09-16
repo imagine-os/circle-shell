@@ -1,0 +1,1091 @@
+<title>Maker Circle</title>
+<meta name="description" content="Circle shell rebuild: a static front-end recreation of the Circle community app shell with mock data.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --brand:#506CF0; --brand-ink:#3E57D6; --brand-soft:#EEF1FE; --brand-text:#FFFFFF;
+  --bg:#F7F8FA; --surface:#FFFFFF; --surface-2:#F3F4F6; --hover:#F1F2F5; --active:#E9ECF8;
+  --border:#E6E8EC; --border-strong:#D5D8DF;
+  --text:#191B1F; --text-2:#4B5563; --muted:#6B7280; --faint:#9CA3AF;
+  --danger:#E5484D; --success:#2FA36B; --warn:#E0A100;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --shadow-lg:0 12px 32px rgba(16,24,40,.16),0 2px 6px rgba(16,24,40,.08);
+  --sidebar-bg:#FFFFFF; --sidebar-w:280px; --rail-w:300px; --main-w:680px; --topbar-h:64px;
+  --radius:12px; --radius-sm:8px;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --cover:linear-gradient(120deg,#506CF0 0%,#8B5CF6 55%,#EC4899 100%);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --brand:#7B8FF5; --brand-ink:#98A8F8; --brand-soft:#262B45; --brand-text:#0F1120;
+    --bg:#191B1F; --surface:#22252B; --surface-2:#2A2D34; --hover:#2C2F37; --active:#2E3350;
+    --border:#33363D; --border-strong:#44474F;
+    --text:#F3F4F6; --text-2:#C9CDD4; --muted:#9CA3AF; --faint:#6B7280;
+    --danger:#F0616A; --success:#4CC38A; --warn:#F2B93B;
+    --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 16px 40px rgba(0,0,0,.55);
+    --sidebar-bg:#1E2025;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --brand:#7B8FF5; --brand-ink:#98A8F8; --brand-soft:#262B45; --brand-text:#0F1120;
+  --bg:#191B1F; --surface:#22252B; --surface-2:#2A2D34; --hover:#2C2F37; --active:#2E3350;
+  --border:#33363D; --border-strong:#44474F;
+  --text:#F3F4F6; --text-2:#C9CDD4; --muted:#9CA3AF; --faint:#6B7280;
+  --danger:#F0616A; --success:#4CC38A; --warn:#F2B93B;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 16px 40px rgba(0,0,0,.55);
+  --sidebar-bg:#1E2025;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+h1,h2,h3,h4{margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.ico{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.sm{width:16px;height:16px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* ---------- App frame ---------- */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;height:100%;min-height:100%}
+.sidebar{background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%;position:sticky;top:0;overflow:hidden}
+.side-scroll{flex:1;overflow-y:auto;padding:8px 12px 12px}
+.content{display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden}
+.page{flex:1;overflow-y:auto;overflow-x:hidden}
+.page-inner{max-width:calc(var(--main-w) + var(--rail-w) + 24px);margin:0 auto;padding:24px 16px 40px;display:grid;grid-template-columns:minmax(0,var(--main-w)) var(--rail-w);gap:24px;align-items:start}
+.page-inner.wide{grid-template-columns:minmax(0,1fr)}
+.main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.rail{position:sticky;top:0;display:flex;flex-direction:column;gap:16px}
+
+/* ---------- Sidebar ---------- */
+.community{display:flex;align-items:center;gap:10px;width:100%;padding:14px 12px;height:var(--topbar-h);border-bottom:1px solid var(--border);text-align:left}
+.community:hover{background:var(--hover)}
+.logo{width:32px;height:32px;border-radius:9px;background:var(--brand);color:var(--brand-text);display:grid;place-items:center;font-weight:700;font-size:15px;flex:none}
+.community .name{font-weight:600;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.community .ico{color:var(--muted)}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;border-radius:var(--radius-sm);color:var(--text-2);font-weight:500;text-align:left;position:relative;line-height:1.3}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item[aria-current="page"]{background:var(--active);color:var(--brand-ink)}
+:root[data-theme="dark"] .nav-item[aria-current="page"]{color:#C7D0FF}
+.nav-item .ico{color:inherit;opacity:.85}
+.nav-item .emoji{width:20px;text-align:center;font-size:15px;flex:none}
+.nav-item .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--brand);flex:none}
+.count{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.group{margin-top:14px}
+.group-h{display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px 6px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-radius:var(--radius-sm)}
+.group-h:hover{color:var(--text);background:var(--hover)}
+.group-h .ico{transition:transform .18s}
+.group[data-open="false"] .group-h .ico{transform:rotate(-90deg)}
+.group[data-open="false"] .group-list{display:none}
+.group-list{display:flex;flex-direction:column;gap:1px}
+.side-foot{border-top:1px solid var(--border);padding:10px 12px}
+.me-row{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border-radius:var(--radius-sm);text-align:left}
+.me-row:hover{background:var(--hover)}
+.me-row .who{flex:1;min-width:0}
+.me-row .who b{display:block;font-weight:600;font-size:13px}
+.me-row .who span{font-size:12px;color:var(--muted)}
+.powered{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:var(--faint);padding:8px 0 2px}
+.powered i{width:12px;height:12px;border-radius:50%;border:2.5px solid currentColor;display:inline-block}
+
+/* ---------- Avatars ---------- */
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:13px;color:#fff;flex:none;letter-spacing:.01em;user-select:none}
+.av.xs{width:24px;height:24px;font-size:10px}
+.av.sm{width:28px;height:28px;font-size:11px}
+.av.lg{width:48px;height:48px;font-size:17px}
+.av.xl{width:64px;height:64px;font-size:22px}
+.stack{display:flex}
+.stack .av{border:2px solid var(--surface);margin-left:-6px}
+.stack .av:first-child{margin-left:0}
+
+/* ---------- Top bar ---------- */
+.topbar{height:var(--topbar-h);border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px;padding:0 20px;flex:none}
+.crumb{display:flex;align-items:center;gap:8px;min-width:0;font-weight:600;font-size:16px}
+.crumb .sub{font-weight:400;color:var(--muted);font-size:14px}
+.crumb span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid transparent;border-radius:10px;padding:0 10px;height:38px;width:280px;color:var(--muted)}
+.search:hover{border-color:var(--border-strong)}
+.search:focus-within{border-color:var(--brand);background:var(--surface)}
+.search input{flex:1;border:0;background:transparent;outline:none;min-width:0;color:var(--text)}
+.search input::placeholder{color:var(--muted)}
+kbd{font:inherit;font-size:11px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--muted);background:var(--surface)}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--text-2);position:relative}
+.icon-btn:hover{background:var(--hover);color:var(--text)}
+.icon-btn[aria-expanded="true"]{background:var(--active);color:var(--brand-ink)}
+.badge{position:absolute;top:5px;right:5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;border:2px solid var(--surface);line-height:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13.5px;border:1px solid transparent;white-space:nowrap}
+.btn.primary{background:var(--brand);color:var(--brand-text)}
+.btn.primary:hover{filter:brightness(.95)}
+.btn.ghost{border-color:var(--border-strong);background:var(--surface);color:var(--text)}
+.btn.ghost:hover{background:var(--hover)}
+.btn.soft{background:var(--surface-2);color:var(--text)}
+.btn.soft:hover{background:var(--hover)}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px;border-radius:8px}
+.btn.on{background:var(--brand-soft);color:var(--brand-ink);border-color:transparent}
+.btn .ico{width:16px;height:16px}
+.hamb{display:none}
+
+/* ---------- Dropdowns ---------- */
+.dd{position:relative}
+.menu{position:absolute;top:calc(100% + 6px);right:0;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:6px;z-index:60}
+.menu.left{left:0;right:auto}
+.menu button,.menu a{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:8px;text-align:left;font-weight:500;color:var(--text-2)}
+.menu button:hover,.menu a:hover{background:var(--hover);color:var(--text)}
+.menu button .ico{width:17px;height:17px;color:var(--muted)}
+.menu hr{border:0;border-top:1px solid var(--border);margin:6px 4px}
+.menu .hd{padding:6px 10px 4px;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.menu button.danger{color:var(--danger)}
+.menu button .check{margin-left:auto;color:var(--brand)}
+
+/* ---------- Cards ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 0}
+.card-h .more{flex:none}
+.card-h h3{font-size:14px}
+.card-h .more{font-size:12.5px;color:var(--brand-ink);font-weight:500}
+.card-b{padding:12px 16px 16px}
+
+/* Space header */
+.space-head{overflow:hidden}
+.cover{height:96px;background:var(--cover)}
+.space-body{padding:0 20px 0;position:relative}
+.space-row{display:flex;align-items:flex-start;gap:14px}
+.space-emoji{margin-top:-28px;width:64px;height:64px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);display:grid;place-items:center;font-size:30px}
+.space-meta{flex:1;min-width:0;padding-top:10px}
+.space-meta h1{font-size:20px;line-height:1.25}
+.space-meta p{color:var(--muted);font-size:13.5px;margin-top:2px}
+.space-actions{display:flex;align-items:center;gap:10px;padding-top:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);font-weight:600;font-size:12.5px}
+.tabs{display:flex;gap:4px;margin-top:12px;border-top:1px solid var(--border);padding-top:4px}
+.tab{padding:10px 12px;font-weight:500;color:var(--muted);position:relative;border-radius:8px 8px 0 0}
+.tab:hover{color:var(--text);background:var(--hover)}
+.tab[aria-selected="true"]{color:var(--text);font-weight:600}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;background:var(--brand);border-radius:2px}
+.member-note{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:8px}
+
+/* Composer */
+.composer{padding:12px 16px}
+.composer-row{display:flex;align-items:center;gap:12px}
+.composer-input{flex:1;height:44px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:left;padding:0 14px;font-size:14.5px;border:1px solid transparent}
+.composer-input:hover{border-color:var(--border-strong)}
+.composer textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:10px 12px;outline:none}
+.composer textarea:focus{border-color:var(--brand)}
+.composer-tools{display:flex;align-items:center;gap:4px;margin-top:10px}
+.tool{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.tool:hover{background:var(--hover);color:var(--text)}
+.composer-open{display:none}
+.composer[data-open="true"] .composer-row{display:none}
+.composer[data-open="true"] .composer-open{display:block}
+.composer-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.composer-foot .btn{margin-left:auto}
+.composer-foot .btn + .btn{margin-left:0}
+
+/* Sort row */
+.sort-row{display:flex;align-items:center;gap:6px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px}
+.seg button{height:30px;padding:0 12px;border-radius:8px;font-weight:500;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow);font-weight:600}
+.sort-row .count{margin-left:auto}
+
+/* Post card */
+.post{padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px}
+.post.pinned{border-color:var(--brand);border-width:1px}
+.post-top{display:flex;align-items:flex-start;gap:12px}
+.post-who{flex:1;min-width:0}
+.post-who .n{font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.post-who .n .role{font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--brand-soft);color:var(--brand-ink)}
+.post-who .m{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.post-who .m .sp{color:var(--brand-ink);font-weight:500}
+.pin-tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--brand-ink);font-weight:600}
+.post h2{font-size:17px;line-height:1.35;letter-spacing:-.005em}
+.post .body{color:var(--text-2);font-size:14.5px;white-space:pre-line}
+.post .body b{color:var(--text)}
+.media{border-radius:10px;aspect-ratio:16/8;max-width:100%;position:relative;overflow:hidden;background:var(--surface-2)}
+.media .cap{position:absolute;left:12px;bottom:10px;font-size:12px;color:#fff;background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px}
+.reacts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.react{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.react[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-ink)}
+.react:hover{border-color:var(--border-strong)}
+.actions{display:flex;align-items:center;gap:2px;border-top:1px solid var(--border);padding-top:8px;margin-top:-2px}
+.act{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 10px;border-radius:8px;color:var(--muted);font-weight:500;font-size:13px;font-variant-numeric:tabular-nums}
+.act:hover{background:var(--hover);color:var(--text)}
+.act[aria-pressed="true"]{color:var(--brand-ink)}
+.act[aria-pressed="true"] .ico{fill:currentColor}
+.act.right{margin-left:auto}
+.act.icon-only{width:34px;padding:0;justify-content:center}
+
+/* Poll */
+.poll{display:flex;flex-direction:column;gap:8px}
+.opt{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;height:40px;padding:0 12px;border:1px solid var(--border);border-radius:10px;overflow:hidden;text-align:left;font-weight:500}
+.opt .bar{position:absolute;inset:0;width:var(--w,0%);background:var(--brand-soft);transition:width .35s}
+.opt span{position:relative;z-index:1}
+.opt .pct{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.opt[aria-checked="true"]{border-color:var(--brand)}
+.opt[aria-checked="true"] .pct{color:var(--brand-ink);font-weight:600}
+.opt:hover{border-color:var(--border-strong)}
+.poll-meta{font-size:12.5px;color:var(--muted)}
+
+/* Event block */
+.ev{display:flex;gap:14px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.date-chip{width:52px;height:56px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;line-height:1}
+.date-chip b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.date-chip span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:700;margin-bottom:3px}
+.ev-meta{flex:1;min-width:0}
+.ev-meta b{display:block;font-weight:600}
+.ev-meta span{font-size:12.5px;color:var(--muted);display:block}
+
+/* Course progress block */
+.course-inline{display:flex;gap:14px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:10px}
+.course-thumb{width:72px;height:56px;border-radius:8px;flex:none;background:linear-gradient(135deg,#F59E0B,#EF4444)}
+.progress{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+.progress i{display:block;height:100%;width:var(--w,0%);background:var(--brand);border-radius:3px}
+.prog-lbl{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-top:5px;font-variant-numeric:tabular-nums}
+
+/* Comments */
+.comments{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--border);padding-top:12px}
+.cm{display:flex;gap:10px}
+.cm .bubble{flex:1;min-width:0}
+.cm .bubble .hd{display:flex;align-items:baseline;gap:8px;font-size:13px}
+.cm .bubble .hd b{font-weight:600}
+.cm .bubble .hd span{color:var(--muted);font-size:12px}
+.cm .bubble p{color:var(--text-2);font-size:13.5px;margin-top:2px}
+.cm .bubble .cm-acts{display:flex;gap:12px;margin-top:4px;font-size:12px;color:var(--muted);font-weight:500}
+.cm .bubble .cm-acts button:hover{color:var(--text)}
+.cm .nested{margin-top:10px;display:flex;gap:10px}
+.cm-input{display:flex;gap:10px;align-items:center}
+.cm-input input{flex:1;height:36px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);padding:0 14px;outline:none}
+.cm-input input:focus{border-color:var(--brand);background:var(--surface)}
+.view-all{font-size:13px;color:var(--brand-ink);font-weight:500;align-self:flex-start}
+
+/* Right rail widgets */
+.about-meta{display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:13px;color:var(--text-2)}
+.about-meta div{display:flex;align-items:center;gap:8px}
+.about-meta .ico{width:16px;height:16px;color:var(--muted)}
+.rail-ev{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.rail-ev:first-of-type{border-top:0;padding-top:4px}
+.rail-ev .date-chip{width:46px;height:50px}
+.rail-ev .date-chip b{font-size:17px}
+.lb{display:flex;align-items:center;gap:10px;padding:8px 0}
+.lb + .lb{border-top:1px solid var(--border)}
+.rank{width:20px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center;font-weight:600}
+.rank.top{color:var(--warn)}
+.lb .who{flex:1;min-width:0}
+.lb .who b{display:block;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb .who span{font-size:12px;color:var(--muted)}
+.pts{font-size:12.5px;font-weight:600;color:var(--brand-ink);font-variant-numeric:tabular-nums;background:var(--brand-soft);padding:2px 8px;border-radius:999px}
+.trend{display:flex;gap:10px;padding:8px 0;align-items:flex-start;width:100%;text-align:left;border-radius:8px}
+.trend + .trend{border-top:1px solid var(--border)}
+.trend .n{width:22px;font-size:12px;font-weight:700;color:var(--faint);margin-top:2px}
+.trend .t{flex:1;min-width:0}
+.trend .t b{display:block;font-weight:600;font-size:13.5px;line-height:1.35}
+.trend .t span{font-size:12px;color:var(--muted)}
+
+/* Members view */
+.filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filterbar .search{width:min(320px,100%)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-weight:500;font-size:13px;color:var(--text-2)}
+.chip:hover{background:var(--hover)}
+.chip[aria-pressed="true"]{background:var(--brand-soft);color:var(--brand-ink);border-color:transparent;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.member{padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.member b{font-weight:600;margin-top:6px}
+.member .hl{font-size:12.5px;color:var(--muted);min-height:36px}
+.member .stat{font-size:12px;color:var(--faint)}
+.member .btns{display:flex;gap:8px;margin-top:8px;width:100%}
+.member .btns .btn{flex:1}
+.online{position:relative}
+.online::after{content:"";position:absolute;right:2px;bottom:2px;width:12px;height:12px;border-radius:50%;background:var(--success);border:2px solid var(--surface)}
+
+/* Events view */
+.event-card{display:flex;gap:16px;padding:16px;align-items:center}
+.event-card .date-chip{width:64px;height:68px}
+.event-card .date-chip b{font-size:24px}
+.event-card .info{flex:1;min-width:0}
+.event-card .info h3{font-size:16px}
+.event-card .info .meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:4px}
+.event-card .info .meta span{display:inline-flex;align-items:center;gap:5px}
+.event-card .going{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.event-card .rs{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+
+/* Courses view */
+.course{overflow:hidden;display:flex;flex-direction:column}
+.course .cov{height:120px;background:var(--cover)}
+.course .cb{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.course .cb h3{font-size:15.5px}
+.course .cb p{font-size:13px;color:var(--muted)}
+.course .cb .btn{margin-top:auto;align-self:flex-start}
+.two{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+
+/* About view */
+.about{padding:20px;display:flex;flex-direction:column;gap:12px;color:var(--text-2);font-size:14.5px}
+.about h3{color:var(--text);font-size:15px}
+.about ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+
+/* Drawer / overlays */
+.scrim{position:fixed;inset:0;background:rgba(16,18,24,.45);z-index:70;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(400px,100%);background:var(--surface);border-left:1px solid var(--border);box-shadow:var(--shadow-lg);z-index:80;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.drawer.show{transform:none}
+.drawer-h{height:var(--topbar-h);display:flex;align-items:center;gap:8px;padding:0 12px 0 20px;border-bottom:1px solid var(--border)}
+.drawer-h h2{font-size:16px;flex:1}
+.drawer-h .link{font-size:13px;color:var(--brand-ink);font-weight:500;padding:6px 8px;border-radius:6px}
+.drawer-h .link:hover{background:var(--hover)}
+.drawer-b{flex:1;overflow-y:auto}
+.notif{display:flex;gap:12px;width:100%;padding:12px 20px;text-align:left;border-bottom:1px solid var(--border);align-items:flex-start;position:relative}
+.notif:hover{background:var(--hover)}
+.notif .txt{flex:1;min-width:0;font-size:13.5px;color:var(--text-2)}
+.notif .txt b{color:var(--text);font-weight:600}
+.notif .txt span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.notif[data-unread="true"]{background:var(--brand-soft)}
+.notif[data-unread="true"]::after{content:"";position:absolute;right:16px;top:20px;width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.notif[data-unread="true"]:hover{background:var(--active)}
+.notif .kind{position:absolute;left:44px;top:34px;width:18px;height:18px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;font-size:10px}
+.notif-tabs{display:flex;gap:4px;padding:8px 20px;border-bottom:1px solid var(--border)}
+
+/* DM popover */
+.dm{position:fixed;right:24px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100% - 32px));height:min(520px,calc(100% - 100px));background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);z-index:65;display:flex;flex-direction:column;overflow:hidden}
+.dm-h{height:52px;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;border-bottom:1px solid var(--border)}
+.dm-h h2{font-size:15px;flex:1;display:flex;align-items:center;gap:8px}
+.dm-b{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.conv{display:flex;gap:10px;align-items:center;width:100%;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.conv:hover{background:var(--hover)}
+.conv .t{flex:1;min-width:0}
+.conv .t b{display:flex;justify-content:space-between;font-weight:600;font-size:13.5px}
+.conv .t b span{font-weight:400;color:var(--muted);font-size:12px}
+.conv .t p{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.conv[data-unread="true"] .t p{color:var(--text);font-weight:500}
+.thread{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:78%;padding:8px 12px;border-radius:14px;font-size:13.5px;background:var(--surface-2);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.me{background:var(--brand);color:var(--brand-text);align-self:flex-end;border-bottom-left-radius:14px;border-bottom-right-radius:4px}
+.msg time{display:block;font-size:10.5px;opacity:.7;margin-top:2px}
+.dm-in{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border)}
+.dm-in input{flex:1;height:38px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);padding:0 14px;outline:none;min-width:0}
+.dm-in input:focus{border-color:var(--brand);background:var(--surface)}
+
+/* Command palette */
+.palette{position:fixed;inset:0;z-index:90;display:flex;justify-content:center;align-items:flex-start;padding:min(14vh,120px) 16px 16px;background:rgba(16,18,24,.5)}
+.pal{width:min(600px,100%);background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);overflow:hidden;max-height:min(520px,100%);display:flex;flex-direction:column}
+.pal-in{display:flex;align-items:center;gap:10px;padding:0 16px;height:56px;border-bottom:1px solid var(--border);color:var(--muted)}
+.pal-in input{flex:1;border:0;background:transparent;font-size:16px;outline:none;color:var(--text);min-width:0}
+.pal-list{overflow-y:auto;padding:8px}
+.pal-hd{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;padding:8px 10px 4px}
+.pal-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:8px;text-align:left}
+.pal-item:hover,.pal-item[aria-selected="true"]{background:var(--hover)}
+.pal-item .emoji{width:24px;text-align:center}
+.pal-item .t{flex:1;min-width:0}
+.pal-item .t b{display:block;font-weight:500}
+.pal-item .t span{font-size:12px;color:var(--muted)}
+.pal-item kbd{margin-left:auto}
+.pal-empty{padding:24px;text-align:center;color:var(--muted)}
+.pal-foot{display:flex;gap:14px;padding:8px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;font-size:13.5px;box-shadow:var(--shadow-lg);z-index:100;opacity:0;transition:.2s;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty .big{font-size:36px;margin-bottom:8px}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1100px){
+  .page-inner{grid-template-columns:minmax(0,1fr);max-width:760px}
+  .rail{display:none}
+}
+@media (max-width:800px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(300px,86vw);z-index:85;transform:translateX(-100%);transition:transform .25s;box-shadow:none;padding-top:env(safe-area-inset-top,0px)}
+  .sidebar.show{transform:none;box-shadow:var(--shadow-lg)}
+  .hamb{display:grid}
+  .topbar{padding:0 12px;gap:6px}
+  .search{width:38px;padding:0;justify-content:center}
+  .search input,.search kbd{display:none}
+  .btn.primary .lbl{display:none}
+  .btn.primary{padding:0 10px}
+  .crumb{font-size:15px}
+  .crumb .sub{display:none}
+  .page-inner{padding:16px 16px 40px}
+  .space-body{padding:0 16px}
+  .space-actions .btn.ghost{display:none}
+  .post{padding:14px 16px 10px}
+  .event-card{flex-wrap:wrap}
+  .event-card .rs{width:100%;flex-direction:row;justify-content:flex-start}
+  .dm{right:16px}
+  .theme-btn{display:none}
+}
+</style>
+
+<div class="app" id="app">
+  <nav class="sidebar" id="sidebar" aria-label="Community navigation">
+    <div class="dd">
+      <button class="community" id="communityBtn" data-menu="communityMenu" aria-haspopup="menu" aria-expanded="false">
+        <span class="logo" aria-hidden="true">M</span>
+        <span class="name">Maker Circle</span>
+        <svg class="ico sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="menu left" id="communityMenu" role="menu" hidden style="left:12px;right:12px;top:58px">
+        <div class="hd">Maker Circle</div>
+        <button role="menuitem" data-action="toast" data-msg="Switching communities is disabled in this demo"><svg class="ico" viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"/></svg>Switch community</button>
+        <hr>
+        <button role="menuitem" data-action="toast" data-msg="Opening community settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+        <button role="menuitem" data-action="toast" data-msg="Customize mode is not part of this shell"><svg class="ico" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Customize</button>
+        <hr>
+        <button role="menuitem" class="danger" data-action="toast" data-msg="Signed out (demo)"><svg class="ico" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</button>
+      </div>
+    </div>
+    <div class="side-scroll" id="sideScroll"></div>
+    <div class="side-foot">
+      <button class="me-row" data-action="open-profile">
+        <span class="av sm" style="background:#0F766E">JC</span>
+        <span class="who"><b>Jordan Cole</b><span>Admin · 2,480 pts</span></span>
+        <svg class="ico sm" viewBox="0 0 24 24" style="color:var(--muted)"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+      <div class="powered"><i aria-hidden="true"></i>Powered by Circle</div>
+    </div>
+  </nav>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="icon-btn hamb" id="hambBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div class="crumb" id="crumb"><span>Home</span></div>
+      <div class="spacer"></div>
+      <button class="search" id="searchBtn" aria-label="Search (Command K)">
+        <svg class="ico sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="Search Maker Circle" tabindex="-1" aria-hidden="true">
+        <kbd>⌘K</kbd>
+      </button>
+      <button class="icon-btn theme-btn" id="themeBtn" aria-label="Toggle dark mode" aria-pressed="false">
+        <svg class="ico moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+        <svg class="ico sun" viewBox="0 0 24 24" hidden><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="icon-btn" id="bellBtn" aria-label="Notifications" aria-controls="drawer" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+        <span class="badge" id="bellBadge">4</span>
+      </button>
+      <button class="icon-btn" id="dmBtn" aria-label="Direct messages" aria-controls="dm" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8v.5z"/></svg>
+        <span class="badge" id="dmBadge">2</span>
+      </button>
+      <button class="btn primary" id="newPostBtn"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">New post</span></button>
+      <div class="dd">
+        <button class="icon-btn" id="avatarBtn" data-menu="avatarMenu" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu" style="width:auto;padding:0 2px"><span class="av sm" style="background:#0F766E">JC</span></button>
+        <div class="menu" id="avatarMenu" role="menu" hidden>
+          <div class="hd">Jordan Cole</div>
+          <button role="menuitem" data-action="open-profile"><svg class="ico" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>View profile</button>
+          <button role="menuitem" data-action="toast" data-msg="Account settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Account settings</button>
+          <button role="menuitem" data-action="toast" data-msg="Bookmarks"><svg class="ico" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>Bookmarks</button>
+          <hr>
+          <div class="hd">Admin</div>
+          <button role="menuitem" data-action="toast" data-msg="Admin: community settings"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+          <button role="menuitem" data-action="toast" data-msg="Customize theme, sidebar and branding"><svg class="ico" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>Customize</button>
+          <hr>
+          <button role="menuitem" class="danger" data-action="toast" data-msg="Signed out (demo)"><svg class="ico" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="page" id="page">
+      <div class="page-inner" id="pageInner">
+        <main class="main" id="main" aria-live="polite"></main>
+        <aside class="rail" id="rail" aria-label="Space details"></aside>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Notifications" aria-hidden="true">
+  <div class="drawer-h">
+    <h2>Notifications</h2>
+    <button class="link" id="markAll">Mark all as read</button>
+    <button class="icon-btn" data-action="close-drawer" aria-label="Close notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="notif-tabs seg" role="tablist">
+    <button aria-pressed="true" data-nfilter="all">All</button>
+    <button aria-pressed="false" data-nfilter="mentions">Mentions</button>
+    <button aria-pressed="false" data-nfilter="follows">Follows</button>
+  </div>
+  <div class="drawer-b" id="notifList"></div>
+</aside>
+
+<section class="dm" id="dm" aria-label="Direct messages" hidden></section>
+
+<div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="Search">
+  <div class="pal">
+    <div class="pal-in">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="palInput" type="text" placeholder="Search spaces, members, posts…" autocomplete="off">
+      <kbd>esc</kbd>
+    </div>
+    <div class="pal-list" id="palList"></div>
+    <div class="pal-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span><span><kbd>↵</kbd> to open</span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------------- Icons ---------------- */
+const I = {
+  home:'<path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1z"/>',
+  users:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+  award:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13.5L17 22l-5-3-5 3 1.5-8.5"/>',
+  bell:'<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/>',
+  chev:'<path d="M6 9l6 6 6-6"/>',
+  chevR:'<path d="M9 18l6-6-6-6"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 000-7.8z"/>',
+  comment:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+  share:'<path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>',
+  bookmark:'<path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>',
+  pin:'<path d="M12 17v5M5 17h14l-1.5-5H6.5zM9 3h6l-1 9H10z"/>',
+  clip:'<path d="M21.4 11.05l-9.2 9.2a6 6 0 01-8.5-8.5l9.2-9.2a4 4 0 015.66 5.66l-9.2 9.2a2 2 0 01-2.83-2.83l8.5-8.49"/>',
+  poll:'<path d="M18 20V10M12 20V4M6 20v-6"/>',
+  smile:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+  video:'<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
+  x:'<path d="M18 6L6 18M6 6l12 12"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  pinIcon:'<circle cx="12" cy="10" r="3"/><path d="M12 22s8-4.5 8-12a8 8 0 10-16 0c0 7.5 8 12 8 12z"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
+  back:'<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  edit:'<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/>',
+  link:'<path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>',
+  eyeOff:'<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>',
+  send:'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>',
+  trend:'<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',
+  star:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'
+};
+const ico = (n, cls='ico') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+
+/* ---------------- Mock data ---------------- */
+const COLORS = ['#506CF0','#0F766E','#B45309','#BE185D','#7C3AED','#0369A1','#15803D','#C2410C','#4338CA','#9F1239'];
+const hue = s => COLORS[[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
+const initials = n => n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const av = (n, size='') => `<span class="av ${size}" style="background:${hue(n)}" aria-hidden="true">${initials(n)}</span>`;
+
+const ME = 'Jordan Cole';
+const members = [
+  {n:'Priya Raman', h:'Product designer · building Loomly', pts:3120, role:'Admin', online:true, joined:'2023-04'},
+  {n:'Jordan Cole', h:'Community lead at Maker Circle', pts:2480, role:'Admin', online:true, joined:'2023-01'},
+  {n:'Marcus Webb', h:'Indie hacker · shipping weekly', pts:2210, role:'Moderator', online:true, joined:'2023-06'},
+  {n:'Sofia Alvarez', h:'Brand & motion design', pts:1980, online:false, joined:'2023-09'},
+  {n:'Daniel Okafor', h:'Full-stack dev, ex-Shopify', pts:1740, online:true, joined:'2024-01'},
+  {n:'Hana Sato', h:'No-code builder · Webflow expert', pts:1520, online:false, joined:'2024-02'},
+  {n:'Leo Fischer', h:'Growth · newsletters that convert', pts:1310, online:false, joined:'2024-03'},
+  {n:'Amara Nwosu', h:'Founder, Studio Kite', pts:1190, online:true, joined:'2024-05'},
+  {n:'Tomás Herrera', h:'iOS engineer & coffee nerd', pts:960, online:false, joined:'2024-08'},
+  {n:'Grace Liu', h:'Ops & systems for small teams', pts:880, online:true, joined:'2024-11'},
+  {n:'Noah Bennett', h:'Learning to code, day 84', pts:410, online:false, joined:'2025-06', fresh:true},
+  {n:'Ines Duarte', h:'Illustrator · picture books', pts:320, online:true, joined:'2025-09', fresh:true},
+  {n:'Kwame Mensah', h:'Data viz & dashboards', pts:280, online:false, joined:'2025-09', fresh:true},
+  {n:'Ruth Adler', h:'Copywriter for SaaS', pts:150, online:false, joined:'2025-09', fresh:true}
+];
+const memberBy = n => members.find(m=>m.n===n);
+
+const groups = [
+  {id:'start', name:'Get Started', spaces:[
+    {id:'welcome', e:'👋', n:'Welcome', d:'Start here. How Maker Circle works and what to do first.', c:1284},
+    {id:'intros', e:'🙌', n:'Introductions', d:'Say hi and tell us what you are building.', c:1210, unread:true},
+    {id:'announce', e:'📣', n:'Announcements', d:'Official updates from the Maker Circle team.', c:1284}
+  ]},
+  {id:'community', name:'Community', spaces:[
+    {id:'general', e:'💬', n:'General', d:'Everything that does not fit anywhere else.', c:1190, unread:true},
+    {id:'show', e:'🛠️', n:'Show & Tell', d:'Ship it, then show it. Feedback welcome.', c:864},
+    {id:'help', e:'❓', n:'Ask for Help', d:'Stuck? Post the problem, get unstuck.', c:702, unread:true},
+    {id:'wins', e:'🏆', n:'Wins', d:'Celebrate launches, revenue, and milestones.', c:655}
+  ]},
+  {id:'courses', name:'Courses', spaces:[
+    {id:'design', e:'🎨', n:'Design Fundamentals', d:'8 lessons on layout, type and color for makers.', c:412, type:'course'},
+    {id:'launch', e:'🚀', n:'Launch Playbook', d:'From waitlist to first 100 customers in 6 weeks.', c:388, type:'course'}
+  ]},
+  {id:'events', name:'Events', spaces:[
+    {id:'office', e:'📅', n:'Weekly Office Hours', d:'Bring a question, leave with a plan. Thursdays 4pm.', c:530, type:'event'},
+    {id:'qa', e:'🎙️', n:'Live Q&A', d:'Monthly conversation with a guest maker.', c:610, type:'event', unread:true}
+  ]}
+];
+const allSpaces = groups.flatMap(g=>g.spaces);
+const spaceBy = id => allSpaces.find(s=>s.id===id);
+
+const events = [
+  {id:'e1', d:'2026-09-17', t:'Weekly Office Hours', time:'4:00 – 5:00 PM PT', loc:'Zoom', host:'Jordan Cole', going:42, space:'office'},
+  {id:'e2', d:'2026-09-22', t:'Live Q&A: Pricing your first product', time:'10:00 AM PT', loc:'Circle Live', host:'Priya Raman', going:118, space:'qa'},
+  {id:'e3', d:'2026-09-25', t:'Design Fundamentals cohort kickoff', time:'9:00 AM PT', loc:'Circle Live', host:'Sofia Alvarez', going:64, space:'design'},
+  {id:'e4', d:'2026-10-02', t:'Show & Tell demo night', time:'5:30 PM PT', loc:'Zoom', host:'Marcus Webb', going:77, space:'show'},
+  {id:'e5', d:'2026-10-09', t:'Launch Playbook: week 3 review', time:'11:00 AM PT', loc:'Circle Live', host:'Leo Fischer', going:39, space:'launch'}
+];
+const courses = [
+  {id:'c1', t:'Design Fundamentals', lessons:8, done:5, mins:190, cover:'linear-gradient(135deg,#506CF0,#8B5CF6)', desc:'Layout, type and color for people who ship.', space:'design'},
+  {id:'c2', t:'Launch Playbook', lessons:12, done:3, mins:340, cover:'linear-gradient(135deg,#F59E0B,#EF4444)', desc:'A six-week plan from waitlist to first 100 customers.', space:'launch'},
+  {id:'c3', t:'Community Ops Basics', lessons:6, done:6, mins:95, cover:'linear-gradient(135deg,#10B981,#0EA5E9)', desc:'Moderation, onboarding flows and weekly rituals.', space:'welcome'}
+];
+
+const posts = [
+  {id:'p1', a:'Jordan Cole', space:'announce', ago:'2d', pinned:true, title:'September roadmap: cohort 4, new leaderboard seasons, and mobile app beta',
+   body:'Three things landing this month:\n1. <b>Design Fundamentals cohort 4</b> kicks off Sept 25. Seats are capped at 60.\n2. <b>Leaderboard seasons</b> reset every quarter starting Oct 1. Your lifetime points stay on your profile.\n3. The <b>branded mobile app</b> beta opens to members who reply here with their phone OS.',
+   likes:96, comments:31, reacts:[['🎉',54],['👍',28],['🔥',14]], type:'text'},
+  {id:'p2', a:'Marcus Webb', space:'show', ago:'3h', title:'Shipped: a one-file invoice generator, 0 dependencies, works offline',
+   body:'Built this over two evenings after the office hours chat about scope creep. It is a single HTML file, saves to localStorage, exports PDF via the print dialog. Roast the UI, I can take it.',
+   media:'linear-gradient(135deg,#0EA5E9 0%,#6366F1 60%,#A855F7 100%)', cap:'invoice-gen.html · 41 KB', likes:48, comments:12, reacts:[['🔥',22],['👏',17]], type:'image',
+   cm:[{a:'Priya Raman', ago:'2h', t:'The empty state is the best part. Consider putting the currency picker next to the total instead of in settings.', likes:6,
+        r:{a:'Marcus Webb', ago:'1h', t:'Good call, moving it tonight.'}}]},
+  {id:'p3', a:'Hana Sato', space:'general', ago:'5h', title:'Quick poll: what is your default stack for a weekend project in 2026?',
+   body:'Trying to settle a debate from the Webflow thread. One vote each, be honest.', type:'poll',
+   poll:{votes:184, opts:[['Next.js + Supabase',71],['Plain HTML/CSS/JS',52],['Webflow / no-code',38],['Rails or Laravel',23]]}, likes:19, comments:27, reacts:[['🤔',11]]},
+  {id:'p4', a:'Priya Raman', space:'qa', ago:'Yesterday', title:'Live Q&A next Tuesday: pricing your first product', type:'event', event:'e2',
+   body:'We will cover anchoring, tiered pricing, and when a lifetime deal makes sense. Drop your pricing page below and I will pick five to review live.',
+   likes:63, comments:18, reacts:[['🎟️',41],['❤️',20]]},
+  {id:'p5', a:'Noah Bennett', space:'intros', ago:'Yesterday', title:'Hi from Leeds — day 84 of learning to code',
+   body:'Left a 9-year career in logistics in June. Currently working through JavaScript fundamentals and building a habit tracker for my partner. Joined because Marcus\'s show & tell posts kept showing up in my feed. Would love an accountability buddy in a UK timezone.',
+   likes:74, comments:22, reacts:[['👋',48],['❤️',26]], type:'text',
+   cm:[{a:'Grace Liu', ago:'20h', t:'Welcome Noah! I am GMT too and post a weekly check-in in Wins every Friday. Tag me.', likes:9,
+        r:{a:'Noah Bennett', ago:'19h', t:'Deal. Friday it is.'}}]},
+  {id:'p6', a:'Sofia Alvarez', space:'design', ago:'2d', title:'Lesson 5 is live: choosing a type scale that survives mobile', type:'course', course:'c1',
+   body:'This one is 24 minutes and comes with a Figma file of the scale we use for Maker Circle itself. Cohort 3 folks, the homework thread is open until Friday.',
+   likes:37, comments:9, reacts:[['📚',19],['🙏',12]]},
+  {id:'p7', a:'Amara Nwosu', space:'wins', ago:'2d', title:'First $1k month from Studio Kite templates 🎉',
+   body:'Fourteen months after posting my intro here. Small number, huge for me. The launch checklist from the Playbook did most of the work, plus Leo\'s advice to email the waitlist twice, not once.',
+   likes:212, comments:58, reacts:[['🎉',130],['🏆',44],['❤️',38]], type:'text'},
+  {id:'p8', a:'Daniel Okafor', space:'help', ago:'3d', title:'Stripe webhooks firing twice in production but not locally, anyone seen this?',
+   body:'Idempotency keys are set. Using the Next.js app router with a route handler. Locally via the CLI it is fine. In prod (Vercel) every event arrives twice about 400ms apart. Region is iad1.',
+   likes:8, comments:14, reacts:[['🤔',5]], type:'text'}
+];
+
+let notifications = [
+  {id:1, a:'Priya Raman', t:'<b>Priya Raman</b> commented on your post <b>September roadmap</b>', ago:'12m', unread:true, kind:'💬', cat:'all'},
+  {id:2, a:'Marcus Webb', t:'<b>Marcus Webb</b> mentioned you in <b>Show & Tell</b>', ago:'1h', unread:true, kind:'@', cat:'mentions'},
+  {id:3, a:'Amara Nwosu', t:'<b>Amara Nwosu</b> and 41 others reacted 🎉 to your post', ago:'3h', unread:true, kind:'🎉', cat:'all'},
+  {id:4, a:'Ines Duarte', t:'<b>Ines Duarte</b> started following you', ago:'5h', unread:true, kind:'👤', cat:'follows'},
+  {id:5, a:'Sofia Alvarez', t:'<b>Sofia Alvarez</b> published lesson 5 in <b>Design Fundamentals</b>', ago:'Yesterday', unread:false, kind:'📚', cat:'all'},
+  {id:6, a:'Jordan Cole', t:'You earned the <b>Top Contributor</b> badge · +250 pts', ago:'Yesterday', unread:false, kind:'🏅', cat:'all'},
+  {id:7, a:'Kwame Mensah', t:'<b>Kwame Mensah</b> started following you', ago:'2d', unread:false, kind:'👤', cat:'follows'},
+  {id:8, a:'Leo Fischer', t:'<b>Leo Fischer</b> replied to your comment in <b>Wins</b>', ago:'2d', unread:false, kind:'↩︎', cat:'mentions'}
+];
+
+const convos = [
+  {id:'d1', a:'Priya Raman', ago:'2m', unread:true, msgs:[
+    {me:false, t:'Are we still doing the Q&A dry run at 3?', at:'2:41 PM'},
+    {me:true, t:'Yes, I booked the Circle Live room.', at:'2:43 PM'},
+    {me:false, t:'Perfect. Can you pin the roadmap post before then?', at:'2:44 PM'}]},
+  {id:'d2', a:'Marcus Webb', ago:'1h', unread:true, msgs:[
+    {me:false, t:'That invoice thing got 40 likes in an hour, what', at:'1:10 PM'},
+    {me:false, t:'Should I turn it into a mini course?', at:'1:11 PM'}]},
+  {id:'d3', a:'Noah Bennett', ago:'Yesterday', unread:false, msgs:[
+    {me:true, t:'Welcome aboard, Noah. Introductions is the place to start.', at:'Yesterday'},
+    {me:false, t:'Thanks Jordan! Posted just now.', at:'Yesterday'}]},
+  {id:'d4', a:'Grace Liu', ago:'Mon', unread:false, msgs:[
+    {me:false, t:'Ops doc is updated, moderation rota is in the second tab.', at:'Mon'},
+    {me:true, t:'You are a hero.', at:'Mon'}]}
+];
+
+/* ---------------- State ---------------- */
+const state = { view:'feed', space:null, tab:'posts', sort:'latest', liked:new Set(), saved:new Set(), votes:{}, rsvp:new Set(), follow:new Set(), mfilter:'all', nfilter:'all', dmOpen:false, dmThread:null, groupOpen:{start:true,community:true,courses:true,events:true} };
+try{ const s = JSON.parse(localStorage.getItem('circle-shell-groups')||'null'); if(s) state.groupOpen = Object.assign(state.groupOpen, s); }catch(e){}
+
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => n.toLocaleString('en-US');
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dateChip = d => { const [y,m,dd] = d.split('-'); return `<div class="date-chip" aria-label="${MONTHS[+m-1]} ${+dd}"><span>${MONTHS[+m-1]}</span><b>${+dd}</b></div>`; };
+const weekday = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short'});
+
+let toastT; function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ---------------- Sidebar ---------------- */
+function renderSidebar(){
+  const cur = (v, sp) => (state.view===v && (sp===undefined || state.space===sp)) ? 'aria-current="page"' : '';
+  const top = [
+    ['feed','home','Home',null],['members','users','Members',null],['events','cal','Events',null],['courses','book','Courses',null],['leaderboard','award','Leaderboard',null]
+  ].map(([v,i,l])=>`<button class="nav-item" data-view="${v}" ${state.view===v && !state.space ? 'aria-current="page"':''}>${ico(i)}<span class="lbl">${l}</span></button>`).join('');
+  const gs = groups.map(g=>`
+    <div class="group" data-open="${state.groupOpen[g.id]!==false}">
+      <button class="group-h" data-group="${g.id}" aria-expanded="${state.groupOpen[g.id]!==false}">${ico('chev','ico sm')}<span>${g.name}</span></button>
+      <div class="group-list">
+        ${g.spaces.map(s=>`<button class="nav-item" data-space="${s.id}" title="${esc(s.n)} · ${fmt(s.c)} members" ${cur('space',s.id)}><span class="emoji" aria-hidden="true">${s.e}</span><span class="lbl">${esc(s.n)}</span>${s.unread && !(state.view==='space'&&state.space===s.id) ? '<span class="dot" aria-label="Unread"></span>':''}</button>`).join('')}
+      </div>
+    </div>`).join('');
+  $('#sideScroll').innerHTML = top + gs;
+}
+
+/* ---------------- Main ---------------- */
+function headerTitle(){
+  if(state.view==='space'){ const s=spaceBy(state.space); return `<span>${s.e} ${esc(s.n)}</span><span class="sub">· ${fmt(s.c)} members</span>`; }
+  return {feed:'<span>Home</span><span class="sub">· Feed</span>', members:'<span>Members</span>', events:'<span>Events</span>', courses:'<span>Courses</span>', leaderboard:'<span>Leaderboard</span>', profile:'<span>Profile</span>'}[state.view] || '<span>Home</span>';
+}
+
+function spaceHeader(){
+  const s = state.view==='space' ? spaceBy(state.space) : {e:'🏠', n:'Maker Circle', d:'A community of 1,284 makers shipping side projects, products and studios. Show your work, ask for help, and celebrate wins.', c:1284};
+  const tabs = [['posts','Posts'],['members','Members'],['events','Events'],['about','About']];
+  const faces = members.slice(0,5).map(m=>av(m.n,'xs')).join('');
+  return `<section class="card space-head">
+    <div class="cover"></div>
+    <div class="space-body">
+      <div class="space-row">
+        <div class="space-emoji" aria-hidden="true">${s.e}</div>
+        <div class="space-meta"><h1>${esc(s.n)}</h1><p>${esc(s.d)}</p></div>
+        <div class="space-actions">
+          <button class="btn ghost sm" data-action="toast" data-msg="Customize is an admin-only surface in the real app">${ico('edit','ico sm')}Customize</button>
+          <button class="pill" data-action="toast" data-msg="You are a member of this space">${ico('check','ico sm')}Joined</button>
+          <div class="dd"><button class="icon-btn" data-menu="spaceMenu" aria-haspopup="menu" aria-expanded="false" aria-label="Space options">${ico('more')}</button>
+            <div class="menu" id="spaceMenu" role="menu" hidden>
+              <button role="menuitem" data-action="toast" data-msg="Notification settings">${ico('bell')}Notification settings</button>
+              <button role="menuitem" data-action="toast" data-msg="Link copied">${ico('link')}Copy link</button>
+              <button role="menuitem" data-action="toast" data-msg="Space settings (admin)">${ico('edit')}Space settings</button>
+              <hr><button role="menuitem" class="danger" data-action="toast" data-msg="Left space (demo)">${ico('x')}Leave space</button>
+            </div></div>
+        </div>
+      </div>
+      <div class="member-note"><span class="stack">${faces}</span><span>${fmt(s.c)} members · ${members.filter(m=>m.online).length} online now</span></div>
+      <div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${state.tab===k}">${l}</button>`).join('')}</div>
+    </div>
+  </section>`;
+}
+
+function composer(){
+  return `<section class="card composer" id="composer" data-open="false">
+    <div class="composer-row">${av(ME)}<button class="composer-input" data-action="open-composer">Share something with the community…</button>
+      <button class="tool" data-action="open-composer" aria-label="Add image">${ico('image')}</button>
+      <button class="tool" data-action="open-composer" aria-label="Create poll">${ico('poll')}</button>
+      <button class="tool" data-action="open-composer" aria-label="Add emoji">${ico('smile')}</button></div>
+    <div class="composer-open">
+      <label class="sr" for="composerTitle">Post title</label>
+      <input id="composerTitle" type="text" placeholder="Title" style="width:100%;height:40px;border:1px solid var(--border);border-radius:10px;padding:0 12px;background:var(--surface);outline:none;font-weight:600;margin-bottom:8px">
+      <label class="sr" for="composerBody">Post body</label>
+      <textarea id="composerBody" placeholder="Share something with the community…"></textarea>
+      <div class="composer-tools">
+        <button class="tool" aria-label="Attach file" data-action="toast" data-msg="Attachments are mocked">${ico('clip')}</button>
+        <button class="tool" aria-label="Add image" data-action="toast" data-msg="Image upload is mocked">${ico('image')}</button>
+        <button class="tool" aria-label="Add video" data-action="toast" data-msg="Video embed is mocked">${ico('video')}</button>
+        <button class="tool" aria-label="Create poll" data-action="toast" data-msg="Poll builder is mocked">${ico('poll')}</button>
+        <button class="tool" aria-label="Add emoji" data-action="toast" data-msg="Emoji picker is mocked">${ico('smile')}</button>
+      </div>
+      <div class="composer-foot"><span class="count">Posting to <b>${state.view==='space' ? esc(spaceBy(state.space).n) : 'General'}</b></span>
+        <button class="btn soft sm" data-action="close-composer">Cancel</button>
+        <button class="btn primary sm" data-action="publish">Publish</button></div>
+    </div>
+  </section>`;
+}
+
+function sortRow(n){
+  return `<div class="sort-row">
+    <div class="dd"><button class="btn soft sm" data-menu="sortMenu" aria-haspopup="menu" aria-expanded="false">${{latest:'Latest',oldest:'Oldest',liked:'Most liked'}[state.sort]}${ico('chev','ico sm')}</button>
+      <div class="menu left" id="sortMenu" role="menu" hidden style="min-width:160px">
+        ${[['latest','Latest'],['oldest','Oldest'],['liked','Most liked']].map(([k,l])=>`<button role="menuitemradio" aria-checked="${state.sort===k}" data-sort="${k}">${l}${state.sort===k?ico('check','ico sm check'):''}</button>`).join('')}
+      </div></div>
+    <div class="seg" role="group" aria-label="Filter posts">
+      <button aria-pressed="${state.filter!=='popular'&&state.filter!=='pinned'}" data-filter="all">All</button>
+      <button aria-pressed="${state.filter==='popular'}" data-filter="popular">${ico('trend','ico sm')}Popular</button>
+      <button aria-pressed="${state.filter==='pinned'}" data-filter="pinned">${ico('pin','ico sm')}Pinned</button>
+    </div>
+    <span class="count">${n} ${n===1?'post':'posts'}</span></div>`;
+}
+
+function postCard(p){
+  const m = memberBy(p.a) || {role:''};
+  const s = spaceBy(p.space);
+  const liked = state.liked.has(p.id), saved = state.saved.has(p.id);
+  let extra = '';
+  if(p.type==='image') extra = `<div class="media" style="background:${p.media}" role="img" aria-label="Screenshot placeholder"><span class="cap">${esc(p.cap)}</span></div>`;
+  if(p.type==='poll'){
+    const v = state.votes[p.id]; const total = p.poll.votes + (v!==undefined?1:0);
+    extra = `<div class="poll" role="radiogroup" aria-label="Poll">${p.poll.opts.map(([o,c],i)=>{ const n=c+(v===i?1:0); const pct=Math.round(n/total*100);
+      return `<button class="opt" role="radio" aria-checked="${v===i}" data-vote="${i}" data-post="${p.id}" style="--w:${v!==undefined?pct:0}%"><span class="bar" aria-hidden="true"></span><span>${esc(o)}</span><span class="pct">${v!==undefined?pct+'%':''}</span></button>`;}).join('')}
+      <div class="poll-meta">${fmt(total)} votes · ${v!==undefined?'You voted. Click again to change.':'Vote to see results · closes in 2 days'}</div></div>`;
+  }
+  if(p.type==='event'){ const e = events.find(x=>x.id===p.event); const on = state.rsvp.has(e.id);
+    extra = `<div class="ev">${dateChip(e.d)}<div class="ev-meta"><b>${esc(e.t)}</b><span>${weekday(e.d)} · ${e.time} · ${e.loc}</span><span>${fmt(e.going+(on?1:0))} going</span></div><button class="btn ${on?'on':'primary'} sm" data-rsvp="${e.id}">${on?ico('check','ico sm')+'Going':'RSVP'}</button></div>`; }
+  if(p.type==='course'){ const c = courses.find(x=>x.id===p.course); const pct = Math.round(c.done/c.lessons*100);
+    extra = `<div class="course-inline"><div class="course-thumb" style="background:${c.cover}" aria-hidden="true"></div><div style="flex:1;min-width:0"><b>${esc(c.t)}</b><div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="--w:${pct}%"></i></div><div class="prog-lbl"><span>${c.done} of ${c.lessons} lessons</span><span>${pct}%</span></div></div><button class="btn ghost sm" data-view="courses">Continue</button></div>`; }
+  const comments = p.cm ? `<div class="comments">${p.cm.map(c=>`<div class="cm">${av(c.a,'sm')}<div class="bubble"><div class="hd"><b>${esc(c.a)}</b><span>${c.ago}</span></div><p>${esc(c.t)}</p><div class="cm-acts"><button data-action="toast" data-msg="Liked comment">Like · ${c.likes}</button><button data-action="toast" data-msg="Reply box (mock)">Reply</button></div>
+      ${c.r?`<div class="nested">${av(c.r.a,'xs')}<div class="bubble"><div class="hd"><b>${esc(c.r.a)}</b><span>${c.r.ago}</span></div><p>${esc(c.r.t)}</p></div></div>`:''}</div></div>`).join('')}
+    <button class="view-all" data-action="toast" data-msg="Opening all ${p.comments} comments">View all ${p.comments} comments</button>
+    <div class="cm-input">${av(ME,'sm')}<label class="sr" for="cm-${p.id}">Write a comment</label><input id="cm-${p.id}" type="text" placeholder="Write a comment…" data-comment="${p.id}"></div></div>` : '';
+  return `<article class="card post ${p.pinned?'pinned':''}" data-post-id="${p.id}">
+    <div class="post-top">${av(p.a)}<div class="post-who"><div class="n">${esc(p.a)}${m.role?`<span class="role">${m.role}</span>`:''}</div><div class="m">${p.pinned?`<span class="pin-tag">${ico('pin','ico sm')}Pinned</span><span>·</span>`:''}<span>${p.ago}</span><span>in</span><button class="sp" data-space="${s.id}">${s.e} ${esc(s.n)}</button></div></div>
+      <div class="dd"><button class="icon-btn" data-menu="pm-${p.id}" aria-haspopup="menu" aria-expanded="false" aria-label="Post options">${ico('more')}</button>
+        <div class="menu" id="pm-${p.id}" role="menu" hidden>
+          <button role="menuitem" data-action="toast" data-msg="Link copied">${ico('link')}Copy link</button>
+          <button role="menuitem" data-action="toast" data-msg="Following post">${ico('bell')}Follow post</button>
+          <button role="menuitem" data-action="toast" data-msg="${p.pinned?'Unpinned':'Pinned to top'} (admin)">${ico('pin')}${p.pinned?'Unpin':'Pin to top'}</button>
+          <button role="menuitem" data-action="toast" data-msg="Hidden from your feed">${ico('eyeOff')}Hide</button>
+          <hr><button role="menuitem" class="danger" data-action="toast" data-msg="Reported to moderators">${ico('flag')}Report</button>
+        </div></div></div>
+    <h2>${esc(p.title)}</h2>
+    <p class="body">${p.body}</p>
+    ${extra}
+    <div class="reacts">${p.reacts.map(([e,c],i)=>`<button class="react" data-react="${p.id}:${i}" aria-pressed="${state[`r-${p.id}:${i}`]?'true':'false'}">${e} <span>${c+(state[`r-${p.id}:${i}`]?1:0)}</span></button>`).join('')}<button class="react" aria-label="Add reaction" data-action="toast" data-msg="Reaction picker (mock)">${ico('smile','ico sm')}</button></div>
+    <div class="actions">
+      <button class="act" data-like="${p.id}" aria-pressed="${liked}">${ico('heart','ico sm')}<span>${liked?'Liked':'Like'} · ${fmt(p.likes+(liked?1:0))}</span></button>
+      <button class="act" data-action="toast" data-msg="Comments (mock)">${ico('comment','ico sm')}<span>${fmt(p.comments)}</span></button>
+      <button class="act" data-action="toast" data-msg="Share link copied">${ico('share','ico sm')}<span>Share</span></button>
+      <button class="act right icon-only" data-save="${p.id}" aria-pressed="${saved}" aria-label="${saved?'Remove bookmark':'Bookmark'}">${ico('bookmark','ico sm')}</button>
+    </div>
+    ${comments}
+  </article>`;
+}
+
+function feedPosts(){
+  let list = posts.filter(p=> state.view!=='space' || p.space===state.space);
+  if(state.filter==='popular') list = list.filter(p=>p.likes>=40);
+  if(state.filter==='pinned') list = list.filter(p=>p.pinned);
+  if(state.sort==='liked') list = [...list].sort((a,b)=>b.likes-a.likes);
+  if(state.sort==='oldest') list = [...list].reverse();
+  if(state.sort==='latest') list = [...list.filter(p=>p.pinned), ...list.filter(p=>!p.pinned)];
+  return list;
+}
+
+function membersView(){
+  const q = (state.mq||'').toLowerCase();
+  let list = members.filter(m=>m.n.toLowerCase().includes(q)||m.h.toLowerCase().includes(q));
+  if(state.mfilter==='admins') list = list.filter(m=>m.role);
+  if(state.mfilter==='new') list = list.filter(m=>m.fresh);
+  if(state.mfilter==='online') list = list.filter(m=>m.online);
+  return `<div class="filterbar">
+    <div class="search"><svg class="ico sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><label class="sr" for="mq">Search members</label><input id="mq" type="text" placeholder="Search ${fmt(members.length)} members…" value="${esc(state.mq||'')}"></div>
+    <div class="chips">${[['all','All'],['admins','Admins & mods'],['new','New this week'],['online','Online']].map(([k,l])=>`<button class="chip" data-mfilter="${k}" aria-pressed="${state.mfilter===k}">${l}</button>`).join('')}</div>
+    <span class="count" style="margin-left:auto">${list.length} shown</span></div>
+    <div class="grid">${list.map(m=>`<article class="card member">
+      <span class="${m.online?'online':''}">${av(m.n,'xl')}</span>
+      <b>${esc(m.n)}${m.role?` <span class="role" style="font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;background:var(--brand-soft);color:var(--brand-ink);vertical-align:middle">${m.role}</span>`:''}</b>
+      <span class="hl">${esc(m.h)}</span>
+      <span class="stat">${fmt(m.pts)} pts · joined ${MONTHS[+m.joined.split('-')[1]-1]} ${m.joined.split('-')[0]}</span>
+      <div class="btns">${m.n===ME?`<button class="btn ghost sm" data-action="open-profile">Edit profile</button>`:`<button class="btn ${state.follow.has(m.n)?'on':'ghost'} sm" data-follow="${esc(m.n)}">${state.follow.has(m.n)?ico('check','ico sm')+'Following':'Follow'}</button><button class="btn soft sm" data-dm="${esc(m.n)}">Message</button>`}</div>
+    </article>`).join('')}</div>
+    ${list.length?'':'<div class="card empty"><div class="big">🔍</div>No members match that filter.</div>'}`;
+}
+
+function eventsView(){
+  const list = state.view==='space' ? events.filter(e=>e.space===state.space) : events;
+  return `<div class="sort-row"><div class="seg"><button aria-pressed="true">Upcoming</button><button aria-pressed="false" data-action="toast" data-msg="Past events (mock)">Past</button></div><span class="count">${list.length} events</span></div>
+    ${list.map(e=>{ const on=state.rsvp.has(e.id); return `<article class="card event-card">${dateChip(e.d)}
+      <div class="info"><h3>${esc(e.t)}</h3><div class="meta"><span>${ico('clock','ico sm')}${weekday(e.d)}, ${e.time}</span><span>${ico('pinIcon','ico sm')}${e.loc}</span><span>${ico('users','ico sm')}Hosted by ${esc(e.host)}</span></div>
+        <div class="going"><span class="stack">${members.slice(2,6).map(m=>av(m.n,'xs')).join('')}</span>${fmt(e.going+(on?1:0))} going</div></div>
+      <div class="rs"><button class="btn ${on?'on':'primary'} sm" data-rsvp="${e.id}">${on?ico('check','ico sm')+'Going':'RSVP'}</button><button class="btn soft sm" data-action="toast" data-msg="Added to calendar (mock)">Add to calendar</button></div>
+    </article>`;}).join('')}
+    ${list.length?'':'<div class="card empty"><div class="big">📅</div>No upcoming events in this space.</div>'}`;
+}
+
+function coursesView(){
+  const list = state.view==='space' ? courses.filter(c=>c.space===state.space) : courses;
+  return `<div class="two">${list.map(c=>{ const pct=Math.round(c.done/c.lessons*100); return `<article class="card course"><div class="cov" style="background:${c.cover}"></div>
+    <div class="cb"><h3>${esc(c.t)}</h3><p>${esc(c.desc)}</p><p>${c.lessons} lessons · ${c.mins} min</p>
+    <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(c.t)} progress"><i style="--w:${pct}%"></i></div><div class="prog-lbl"><span>${c.done} of ${c.lessons} complete</span><span>${pct}%</span></div>
+    <button class="btn ${pct===100?'soft':'primary'} sm" data-action="toast" data-msg="${pct===100?'Certificate downloaded (mock)':'Opening lesson '+(c.done+1)}">${pct===100?'View certificate':c.done?'Continue lesson '+(c.done+1):'Start course'}</button></div></article>`;}).join('')}</div>
+    ${list.length?'':'<div class="card empty"><div class="big">📚</div>No courses in this space.</div>'}`;
+}
+
+function leaderboardView(){
+  const sorted = [...members].sort((a,b)=>b.pts-a.pts);
+  return `<section class="card"><div class="card-h"><h3>All-time leaderboard</h3><span class="count">Season 3 ends Sep 30</span></div><div class="card-b" style="padding-top:4px">
+    ${sorted.map((m,i)=>`<div class="lb"><span class="rank ${i<3?'top':''}">${i+1}</span>${av(m.n,'sm')}<div class="who"><b>${esc(m.n)}${m.n===ME?' (you)':''}</b><span>${esc(m.h)}</span></div><span class="pts">${fmt(m.pts)} pts</span></div>`).join('')}
+  </div></section>`;
+}
+
+function aboutView(){
+  const s = state.view==='space' ? spaceBy(state.space) : null;
+  return `<section class="card about"><h3>About ${s?esc(s.n):'Maker Circle'}</h3><p>${s?esc(s.d):'Maker Circle is a paid community for independent makers. We run two cohort courses a year, weekly office hours, and a monthly live Q&A with a guest.'}</p>
+    <h3>Guidelines</h3><ul><li>Show your work, not just your opinions.</li><li>Ask specific questions, share what you already tried.</li><li>Celebrate in Wins, critique in Show & Tell.</li><li>No cold pitches in DMs.</li></ul>
+    <h3>Moderators</h3><div class="stack">${members.filter(m=>m.role).map(m=>av(m.n,'sm')).join('')}</div></section>`;
+}
+
+function profileView(){
+  const m = memberBy(ME);
+  return `<section class="card" style="overflow:hidden"><div class="cover" style="height:120px"></div><div style="padding:0 20px 20px"><div class="space-row">${av(ME,'xl')}<div class="space-meta"><h1>${ME}</h1><p>${esc(m.h)} · Admin</p></div><div class="space-actions"><button class="btn ghost sm" data-action="toast" data-msg="Edit profile (mock)">Edit profile</button></div></div>
+    <div class="about-meta"><div>${ico('award')}${fmt(m.pts)} points · rank #2 this season</div><div>${ico('cal')}Joined January 2023</div><div>${ico('globe')}jordancole.dev</div></div></div></section>${leaderboardView()}`;
+}
+
+function renderMain(){
+  const inner = $('#pageInner'); const main = $('#main');
+  const wide = ['members','events','courses','leaderboard','profile'].includes(state.view) || (state.view!=='feed' && state.view!=='space');
+  inner.classList.toggle('wide', wide || (state.tab!=='posts' && state.tab!=='about'));
+  let html = '';
+  if(state.view==='members') html = `<h1 style="font-size:22px">Members</h1>` + membersView();
+  else if(state.view==='events') html = `<h1 style="font-size:22px">Events</h1>` + eventsView();
+  else if(state.view==='courses') html = `<h1 style="font-size:22px">Courses</h1>` + coursesView();
+  else if(state.view==='leaderboard') html = `<h1 style="font-size:22px">Leaderboard</h1>` + leaderboardView();
+  else if(state.view==='profile') html = profileView();
+  else {
+    html = spaceHeader();
+    if(state.tab==='posts'){ const list = feedPosts(); html += composer() + sortRow(list.length) + (list.length ? list.map(postCard).join('') : `<div class="card empty"><div class="big">${spaceBy(state.space).e}</div>No posts here yet. Be the first to share something.</div>`); }
+    else if(state.tab==='members') html += membersView();
+    else if(state.tab==='events') html += eventsView();
+    else if(state.tab==='about') html += aboutView();
+  }
+  main.innerHTML = html;
+  $('#crumb').innerHTML = headerTitle();
+  document.title = (state.view==='space' ? spaceBy(state.space).n+' · ' : state.view!=='feed' ? headerTitle().replace(/<[^>]+>/g,'').trim()+' · ' : '') + 'Maker Circle';
+  renderRail();
+  $('#page').scrollTop = 0;
+}
+
+function renderRail(){
+  const s = state.view==='space' ? spaceBy(state.space) : null;
+  const top = [...members].sort((a,b)=>b.pts-a.pts).slice(0,5);
+  const trending = [...posts].sort((a,b)=>(b.comments*3+b.likes)-(a.comments*3+a.likes)).slice(0,4);
+  $('#rail').innerHTML = `
+    <section class="card"><div class="card-h"><h3>About this space</h3></div><div class="card-b"><p style="color:var(--text-2);font-size:13.5px">${esc(s?s.d:'Home shows the latest posts from every space you have joined.')}</p>
+      <div class="about-meta"><div>${ico('users')}${fmt(s?s.c:1284)} members</div><div>${ico(s&&s.type==='course'?'lock':'globe')}${s&&s.type==='course'?'Private · paid members':'Open to all members'}</div><div>${ico('cal')}Created ${s?'April 2023':'January 2023'}</div><div>${ico('spark')}Admins: Jordan Cole, Priya Raman</div></div></div></section>
+    <section class="card"><div class="card-h"><h3>Upcoming events</h3><button class="more" data-view="events">See all</button></div><div class="card-b" style="padding-top:6px">
+      ${events.slice(0,3).map(e=>{const on=state.rsvp.has(e.id);return `<div class="rail-ev">${dateChip(e.d)}<div class="ev-meta"><b style="font-size:13.5px;line-height:1.3">${esc(e.t)}</b><span>${weekday(e.d)} · ${e.time}</span></div><button class="btn ${on?'on':'soft'} sm" data-rsvp="${e.id}" aria-label="${on?'Going to':'RSVP to'} ${esc(e.t)}">${on?ico('check','ico sm'):'RSVP'}</button></div>`;}).join('')}</div></section>
+    <section class="card"><div class="card-h"><h3>Top members this week</h3><button class="more" data-view="leaderboard">Leaderboard</button></div><div class="card-b" style="padding-top:4px">
+      ${top.map((m,i)=>`<div class="lb"><span class="rank ${i<3?'top':''}">${i+1}</span>${av(m.n,'sm')}<div class="who"><b>${esc(m.n)}</b><span>${m.role||'Member'}</span></div><span class="pts">${fmt(m.pts)}</span></div>`).join('')}</div></section>
+    <section class="card"><div class="card-h"><h3>Trending</h3></div><div class="card-b" style="padding-top:4px">
+      ${trending.map((p,i)=>`<button class="trend" data-space="${p.space}"><span class="n">${i+1}</span><span class="t"><b>${esc(p.title)}</b><span>${fmt(p.comments)} comments · ${spaceBy(p.space).e} ${esc(spaceBy(p.space).n)}</span></span></button>`).join('')}</div></section>`;
+}
+
+/* ---------------- Notifications ---------------- */
+function renderNotifs(){
+  const list = notifications.filter(n=>state.nfilter==='all'||n.cat===state.nfilter);
+  $('#notifList').innerHTML = list.map(n=>`<button class="notif" data-unread="${n.unread}" data-notif="${n.id}">${av(n.a)}<span class="kind" aria-hidden="true">${n.kind}</span><span class="txt">${n.t}<span>${n.ago}</span></span></button>`).join('') || '<div class="empty">Nothing here yet.</div>';
+  const unread = notifications.filter(n=>n.unread).length;
+  const b = $('#bellBadge'); b.textContent = unread; b.hidden = !unread;
+}
+function openDrawer(open){ $('#drawer').classList.toggle('show',open); $('#drawer').setAttribute('aria-hidden',String(!open)); $('#scrim').classList.toggle('show',open); $('#bellBtn').setAttribute('aria-expanded',String(open)); if(open) $('#markAll').focus(); }
+
+/* ---------------- DMs ---------------- */
+function renderDM(){
+  const dm = $('#dm'); dm.hidden = !state.dmOpen; $('#dmBtn').setAttribute('aria-expanded',String(state.dmOpen));
+  const unread = convos.filter(c=>c.unread).length; const b=$('#dmBadge'); b.textContent=unread; b.hidden=!unread;
+  if(!state.dmOpen) return;
+  if(!state.dmThread){
+    dm.innerHTML = `<div class="dm-h"><h2>Messages</h2><button class="icon-btn" data-action="toast" data-msg="New message (mock)" aria-label="New message">${ico('edit')}</button><button class="icon-btn" data-action="close-dm" aria-label="Close messages">${ico('x')}</button></div>
+      <div class="dm-b">${convos.map(c=>`<button class="conv" data-thread="${c.id}" data-unread="${c.unread}">${av(c.a)}<span class="t"><b>${esc(c.a)}<span>${c.ago}</span></b><p>${esc(c.msgs[c.msgs.length-1].t)}</p></span></button>`).join('')}</div>`;
+  } else {
+    const c = convos.find(x=>x.id===state.dmThread);
+    dm.innerHTML = `<div class="dm-h"><button class="icon-btn" data-action="dm-back" aria-label="Back to conversations">${ico('back')}</button><h2>${av(c.a,'sm')}${esc(c.a)}</h2><button class="icon-btn" data-action="close-dm" aria-label="Close messages">${ico('x')}</button></div>
+      <div class="thread" id="thread">${c.msgs.map(m=>`<div class="msg ${m.me?'me':''}">${esc(m.t)}<time>${m.at}</time></div>`).join('')}</div>
+      <form class="dm-in" id="dmForm"><label class="sr" for="dmInput">Message ${esc(c.a)}</label><input id="dmInput" type="text" placeholder="Message ${esc(c.a.split(' ')[0])}…" autocomplete="off"><button class="btn primary sm" type="submit" aria-label="Send">${ico('send','ico sm')}</button></form>`;
+    const th = $('#thread'); th.scrollTop = th.scrollHeight;
+    $('#dmInput').focus();
+  }
+}
+
+/* ---------------- Palette ---------------- */
+function renderPalette(){
+  const q = $('#palInput').value.trim().toLowerCase();
+  const sp = allSpaces.filter(s=>!q||s.n.toLowerCase().includes(q));
+  const mem = members.filter(m=>!q||m.n.toLowerCase().includes(q)||m.h.toLowerCase().includes(q)).slice(0,6);
+  const ps = q ? posts.filter(p=>p.title.toLowerCase().includes(q)).slice(0,4) : [];
+  const pages = [['feed','Home',I.home],['members','Members',I.users],['events','Events',I.cal],['courses','Courses',I.book],['leaderboard','Leaderboard',I.award]].filter(([,l])=>!q||l.toLowerCase().includes(q));
+  let html = '';
+  if(pages.length) html += `<div class="pal-hd">Pages</div>` + pages.map(([v,l,p])=>`<button class="pal-item" data-view="${v}"><span class="emoji"><svg class="ico sm" viewBox="0 0 24 24" style="margin:auto">${p}</svg></span><span class="t"><b>${l}</b></span></button>`).join('');
+  if(sp.length) html += `<div class="pal-hd">Spaces</div>` + sp.map(s=>`<button class="pal-item" data-space="${s.id}"><span class="emoji">${s.e}</span><span class="t"><b>${esc(s.n)}</b><span>${fmt(s.c)} members</span></span></button>`).join('');
+  if(mem.length) html += `<div class="pal-hd">Members</div>` + mem.map(m=>`<button class="pal-item" data-dm="${esc(m.n)}">${av(m.n,'xs')}<span class="t"><b>${esc(m.n)}</b><span>${esc(m.h)}</span></span><kbd>DM</kbd></button>`).join('');
+  if(ps.length) html += `<div class="pal-hd">Posts</div>` + ps.map(p=>`<button class="pal-item" data-space="${p.space}"><span class="emoji">${spaceBy(p.space).e}</span><span class="t"><b>${esc(p.title)}</b><span>${esc(p.a)} · ${p.ago}</span></span></button>`).join('');
+  $('#palList').innerHTML = html || '<div class="pal-empty">No results for “'+esc(q)+'”</div>';
+  const first = $('#palList .pal-item'); if(first) first.setAttribute('aria-selected','true');
+}
+function openPalette(open){ const p=$('#palette'); p.hidden=!open; if(open){ $('#palInput').value=''; renderPalette(); $('#palInput').focus(); } }
+function palMove(dir){ const items=$$('#palList .pal-item'); if(!items.length) return; let i=items.findIndex(x=>x.getAttribute('aria-selected')==='true'); items.forEach(x=>x.removeAttribute('aria-selected')); i=(i+dir+items.length)%items.length; items[i].setAttribute('aria-selected','true'); items[i].scrollIntoView({block:'nearest'}); }
+
+/* ---------------- Theme ---------------- */
+function applyTheme(t){
+  const root=document.documentElement;
+  if(t) root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
+  const dark = t==='dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches);
+  $('#themeBtn').setAttribute('aria-pressed',String(dark));
+  $('#themeBtn .moon').hidden = dark; $('#themeBtn .sun').hidden = !dark;
+}
+let theme=null; try{ theme = localStorage.getItem('circle-shell-theme') || (document.documentElement.getAttribute('data-theme')||null); }catch(e){}
+applyTheme(theme);
+$('#themeBtn').addEventListener('click',()=>{ const dark = $('#themeBtn').getAttribute('aria-pressed')==='true'; theme = dark?'light':'dark'; applyTheme(theme); try{ localStorage.setItem('circle-shell-theme',theme);}catch(e){} });
+
+/* ---------------- Navigation ---------------- */
+function go(view, space){
+  state.view = view; state.space = space||null; state.tab='posts'; state.filter='all';
+  if(space){ const s=spaceBy(space); if(s) s.unread=false; }
+  renderSidebar(); renderMain(); closeSidebar();
+}
+function closeMenus(except){ $$('.menu').forEach(m=>{ if(m!==except){ m.hidden=true; const b=$(`[data-menu="${m.id}"]`); if(b) b.setAttribute('aria-expanded','false'); } }); }
+function closeSidebar(){ $('#sidebar').classList.remove('show'); $('#hambBtn').setAttribute('aria-expanded','false'); if(!$('#drawer').classList.contains('show')) $('#scrim').classList.remove('show'); }
+
+/* ---------------- Events (delegated) ---------------- */
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-menu],[data-action],[data-view],[data-space],[data-group],[data-tab],[data-sort],[data-filter],[data-like],[data-save],[data-react],[data-vote],[data-rsvp],[data-follow],[data-dm],[data-mfilter],[data-nfilter],[data-notif],[data-thread]');
+  if(!e.target.closest('.menu') && !t?.dataset.menu) closeMenus();
+  if(!t) return;
+  const d = t.dataset;
+  if(d.menu){ const m=$('#'+d.menu); const open=m.hidden; closeMenus(m); m.hidden=!open; t.setAttribute('aria-expanded',String(open)); return; }
+  if(d.action){
+    const a=d.action;
+    if(a==='toast') toast(d.msg||'Done');
+    if(a==='close-drawer') openDrawer(false);
+    if(a==='close-dm'){ state.dmOpen=false; renderDM(); }
+    if(a==='dm-back'){ state.dmThread=null; renderDM(); }
+    if(a==='open-profile'){ go('profile'); }
+    if(a==='open-composer'){ const c=$('#composer'); c.dataset.open='true'; $('#composerTitle').focus(); }
+    if(a==='close-composer'){ $('#composer').dataset.open='false'; }
+    if(a==='publish'){ const title=$('#composerTitle').value.trim(), body=$('#composerBody').value.trim(); if(!title&&!body){ toast('Add a title or some text first'); return; }
+      posts.unshift({id:'p'+Date.now(), a:ME, space: state.view==='space'?state.space:'general', ago:'Just now', title: title||body.slice(0,60), body: esc(body), likes:0, comments:0, reacts:[], type:'text'}); renderMain(); toast('Published'); }
+    closeMenus(); return;
+  }
+  if(d.group){ state.groupOpen[d.group] = !(state.groupOpen[d.group]!==false); try{localStorage.setItem('circle-shell-groups',JSON.stringify(state.groupOpen));}catch(err){} renderSidebar(); return; }
+  if(d.space){ openPalette(false); go('space', d.space); return; }
+  if(d.view){ openPalette(false); go(d.view); return; }
+  if(d.tab){ state.tab=d.tab; renderMain(); return; }
+  if(d.sort){ state.sort=d.sort; closeMenus(); renderMain(); return; }
+  if(d.filter){ state.filter=d.filter; renderMain(); return; }
+  if(d.like){ const p=posts.find(x=>x.id===d.like); state.liked.has(p.id)?state.liked.delete(p.id):state.liked.add(p.id); const liked=state.liked.has(p.id); t.setAttribute('aria-pressed',String(liked)); t.querySelector('span').textContent=`${liked?'Liked':'Like'} · ${fmt(p.likes+(liked?1:0))}`; return; }
+  if(d.save){ const on=!state.saved.has(d.save); on?state.saved.add(d.save):state.saved.delete(d.save); t.setAttribute('aria-pressed',String(on)); t.setAttribute('aria-label',on?'Remove bookmark':'Bookmark'); toast(on?'Saved to bookmarks':'Removed from bookmarks'); return; }
+  if(d.react){ const k='r-'+d.react; state[k]=!state[k]; const [pid,i]=d.react.split(':'); const p=posts.find(x=>x.id===pid); t.setAttribute('aria-pressed',String(state[k])); t.querySelector('span').textContent=p.reacts[+i][1]+(state[k]?1:0); return; }
+  if(d.vote){ const cur=state.votes[d.post]; state.votes[d.post] = (cur===+d.vote) ? undefined : +d.vote; if(state.votes[d.post]===undefined) delete state.votes[d.post]; const card=t.closest('.post'); card.outerHTML = postCard(posts.find(p=>p.id===d.post)); return; }
+  if(d.rsvp){ state.rsvp.has(d.rsvp)?state.rsvp.delete(d.rsvp):state.rsvp.add(d.rsvp); toast(state.rsvp.has(d.rsvp)?'You are going':'RSVP removed'); renderMain(); return; }
+  if(d.follow){ state.follow.has(d.follow)?state.follow.delete(d.follow):state.follow.add(d.follow); renderMain(); return; }
+  if(d.dm){ openPalette(false); const c = convos.find(x=>x.a===d.dm) || (convos.push({id:'d'+Date.now(), a:d.dm, ago:'Now', unread:false, msgs:[]}), convos[convos.length-1]); state.dmOpen=true; state.dmThread=c.id; c.unread=false; renderDM(); return; }
+  if(d.mfilter){ state.mfilter=d.mfilter; renderMain(); return; }
+  if(d.nfilter){ state.nfilter=d.nfilter; $$('[data-nfilter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.nfilter===d.nfilter))); renderNotifs(); return; }
+  if(d.notif){ const n=notifications.find(x=>x.id===+d.notif); n.unread=false; renderNotifs(); toast('Opening notification'); return; }
+  if(d.thread){ state.dmThread=d.thread; convos.find(c=>c.id===d.thread).unread=false; renderDM(); return; }
+});
+
+document.addEventListener('input', e=>{
+  if(e.target.id==='mq'){ state.mq=e.target.value; const grid=$('.grid'); const tmp=document.createElement('div'); tmp.innerHTML=membersView(); grid.replaceWith(tmp.querySelector('.grid')); $('.filterbar .count').textContent = tmp.querySelector('.filterbar .count').textContent; }
+  if(e.target.id==='palInput') renderPalette();
+});
+document.addEventListener('submit', e=>{
+  if(e.target.id==='dmForm'){ e.preventDefault(); const inp=$('#dmInput'); const v=inp.value.trim(); if(!v) return; const c=convos.find(x=>x.id===state.dmThread); c.msgs.push({me:true,t:v,at:'Now'}); c.ago='Now'; inp.value=''; renderDM();
+    setTimeout(()=>{ if(state.dmThread===c.id){ c.msgs.push({me:false,t:['On it 👍','Sounds good, thanks!','Let me check and get back to you.'][c.msgs.length%3],at:'Now'}); renderDM(); } },1400); }
+});
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openPalette($('#palette').hidden); return; }
+  if(e.key==='Escape'){ openPalette(false); openDrawer(false); closeMenus(); closeSidebar(); if(state.dmOpen){state.dmOpen=false; renderDM();} return; }
+  if(!$('#palette').hidden){
+    if(e.key==='ArrowDown'){ e.preventDefault(); palMove(1); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); palMove(-1); }
+    if(e.key==='Enter'){ e.preventDefault(); const sel=$('#palList .pal-item[aria-selected="true"]'); if(sel) sel.click(); }
+  }
+  if(e.key==='Enter' && e.target.dataset && e.target.dataset.comment){ const v=e.target.value.trim(); if(!v) return; const p=posts.find(x=>x.id===e.target.dataset.comment); p.cm.push({a:ME, ago:'Just now', t:v, likes:0}); p.comments++; renderMain(); toast('Comment posted'); }
+});
+$('#searchBtn').addEventListener('click', ()=>openPalette(true));
+$('#palette').addEventListener('click', e=>{ if(e.target===e.currentTarget) openPalette(false); });
+$('#bellBtn').addEventListener('click', ()=>openDrawer(!$('#drawer').classList.contains('show')));
+$('#scrim').addEventListener('click', ()=>{ openDrawer(false); closeSidebar(); });
+$('#markAll').addEventListener('click', ()=>{ notifications.forEach(n=>n.unread=false); renderNotifs(); toast('All notifications marked as read'); });
+$('#dmBtn').addEventListener('click', ()=>{ state.dmOpen=!state.dmOpen; renderDM(); });
+$('#newPostBtn').addEventListener('click', ()=>{ if(!['feed','space'].includes(state.view)) go('feed'); state.tab='posts'; renderMain(); const c=$('#composer'); c.dataset.open='true'; c.scrollIntoView({block:'center'}); $('#composerTitle').focus(); });
+$('#hambBtn').addEventListener('click', ()=>{ const open=!$('#sidebar').classList.contains('show'); $('#sidebar').classList.toggle('show',open); $('#hambBtn').setAttribute('aria-expanded',String(open)); $('#scrim').classList.toggle('show',open); });
+
+/* ---------------- Boot ---------------- */
+renderSidebar(); renderMain(); renderNotifs(); renderDM();
+})();
+</script>

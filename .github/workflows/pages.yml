@@ -1,0 +1,37 @@
+name: Publish to gh-pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build orphan gh-pages branch and force-push it
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          SITE="$(mktemp -d)"
+          # Wrap the page fragment in a full HTML document for static hosting.
+          {
+            printf '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+            cat index.html
+            printf '</html>\n'
+          } > "$SITE/index.html"
+          cp README.md "$SITE/README.md"
+          touch "$SITE/.nojekyll"
+          cd "$SITE"
+          git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Publish site from ${GITHUB_SHA}"
+          git push --force "https://x-access-token:${TOKEN}@github.com/${REPO}.git" gh-pages:gh-pages
