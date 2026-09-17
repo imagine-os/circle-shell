@@ -4,6 +4,8 @@ A high-fidelity, static front-end recreation of the [Circle](https://circle.so) 
 
 Everything on the page is **mock data**: the community "Maker Circle", its spaces, members, posts, events, courses, notifications and messages are invented. Interactions (likes, polls, RSVPs, follows, the composer, DMs, the command palette, dark mode) work locally in the browser and reset on reload, except for the theme and collapsed sidebar groups, which are remembered in `localStorage`.
 
+**Live site:** <https://imagine-os.github.io/circle-shell/> — the site deploys from `main` via the Pages workflow (`.github/workflows/pages.yml`) to the `gh-pages` branch.
+
 ## Open it
 
 - Double-click `index.html`, or
